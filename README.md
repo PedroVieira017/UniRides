@@ -1,43 +1,7 @@
-﻿# UniRides - Plataforma de boleias
+# UniRides - Plataforma de boleias
 
 Aplicacao web para partilha de boleias entre membros da comunidade academica,
 com autenticacao, gestao de boleias e comunicacao em tempo real.
-
-## Enquadramento e objetivos
-Este projeto responde a uma necessidade real identificada pelos estudantes:
-facilitar a organizacao de boleias entre colegas. O desenvolvimento inclui
-recolha e validacao de requisitos com utilizadores reais e avaliacao continua
-com colegas.
-
-Objetivos gerais:
-1. Interagir com utilizadores reais para recolher e validar requisitos.
-2. Envolver estudantes na avaliacao do projeto (revisao e feedback).
-3. Uso refletido de IA, com justificacao e adaptacao das sugestoes.
-
-## Funcionalidades
-- Registo e login de utilizadores.
-- Criacao e pesquisa de boleias.
-- Reservas e gestao de participacoes.
-- Chat/alertas em tempo real por boleia.
-- Area pessoal (minhas boleias, reservas, favoritos).
-
-## Arquitetura e tecnologia
-- Backend: Node.js + Express (API RESTful).
-- Base de dados: MongoDB (Mongoose).
-- Tempo real: Socket.IO.
-- Frontend: React (Vite).
-
-## Requisitos tecnicos (checklist)
-- [x] API RESTful
-- [x] Base de dados nao relacional (MongoDB)
-- [x] Interacao em tempo real (Socket.IO)
-- [x] Backend em Node.js
-- [x] Frontend com framework (React)
-- [x] Autenticacao (login e registo)
-- [ ] Deploy (Render/Vercel) -> preencher URL
-- [ ] README com instalacao, execucao e membros do grupo
-- [ ] Reflexao sobre uso de IA
-- [ ] Evidencia de recolha de requisitos e avaliacao por utilizadores reais
 
 ## Instalacao
 Requisitos:
@@ -85,28 +49,35 @@ Executar:
 npm run dev
 ```
 
-## Deploy
-- Frontend (Vercel): TODO_URL
-- Backend (Render): TODO_URL
-
 ## Membros do grupo
-- Nome 1 (numero) - funcao/contribuicoes
-- Nome 2 (numero) - funcao/contribuicoes
-- Nome 3 (numero) - funcao/contribuicoes
+- Pedro Rodrigues Vieira n31389
+- Diogo Viana n29195
+- Pablo Mendes n31404
 
-## Requisitos e validacao com utilizadores
-Descrever aqui:
-- Quem foi entrevistado (perfil).
-- Principais requisitos levantados.
-- Como foram validados (teste com utilizadores/feedback).
+## Uso de IA (apenas nestas partes)
+### Rotas populares (frontend)
+Usamos IA apenas para apoiar a composicao do bloco "Rotas populares" (conteudo de exemplo e organizacao do layout). Depois, ajustamos manualmente os textos e a lista para ficar consistente com o resto da pagina.
 
-## Uso de IA (reflexao)
-Ferramentas usadas:
-- Ex.: ChatGPT (apoio tecnico, explicacoes, sugestoes).
+Onde foi feito:
+- `frontend/src/pages/RidesPage.jsx` (secao do bloco "Rotas populares")
+- `frontend/src/App.css` (estilos do cartao)
 
-O que foi gerado e como foi adaptado:
-- Ex.: trechos de codigo ajustados para o contexto do projeto.
-- Ex.: revisao manual de todas as sugestoes antes de integrar.
+O que precisamos para fazer:
+- Apenas React/Vite ja instalado (sem dependencias extra)
+- Texto/rotas finais definidos manualmente
 
-## Licenca
-Por definir.
+### Chat da boleia (tempo real)
+Usamos IA apenas para apoiar a estrutura base do fluxo em tempo real (eventos de envio/rececao e ligacao do socket) e a organizacao do UI do chat. O codigo final foi revisto e adaptado ao nosso backend e ao modelo de dados.
+
+Onde foi feito:
+- `backend/src/index.js` (Socket.IO: conexao, join da sala da boleia, broadcast)
+- `backend/src/routes/messageRoutes.js` (rotas REST de mensagens)
+- `frontend/src/api/socket.js` (cliente Socket.IO)
+- `frontend/src/components/RideChat.jsx` (UI e logica)
+- `frontend/src/pages/RideDetailsPage.jsx` (injecao do chat na pagina da boleia)
+- `frontend/src/index.css` (estilos com apoio do chat)
+
+O que precisamos para fazer:
+- Dependencias: `socket.io` no backend e `socket.io-client` no frontend
+- Backend e frontend a correr (ver secao Instalacao)
+- Variavel `VITE_API_URL` apontada ao backend
