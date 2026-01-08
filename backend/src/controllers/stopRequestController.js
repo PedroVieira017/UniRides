@@ -12,6 +12,11 @@ const getAcceptedPassengerIds = async (rideId) => {
   return acceptedBookings.map((booking) => booking.passenger.toString());
 };
 
+const getAcceptedPassengerIdSet = async (rideId) => {
+  const acceptedPassengerIds = await getAcceptedPassengerIds(rideId);
+  return new Set(acceptedPassengerIds);
+};
+
 const canAccessRide = async (rideId, userId) => {
   const ride = await Ride.findById(rideId);
   if (!ride) return { ride: null, isDriver: false, hasBooking: false };
@@ -26,16 +31,52 @@ const canAccessRide = async (rideId, userId) => {
   return { ride, isDriver, hasBooking: !!hasBooking };
 };
 
-const getRequiredApproverIds = async (rideId, ride, requesterId) => {
-  const acceptedPassengerIds = await getAcceptedPassengerIds(rideId);
-  const required = new Set(acceptedPassengerIds);
-  if (requesterId) {
-    required.delete(requesterId.toString());
+const toIdString = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (value._id) return value._id.toString();
+  if (typeof value.toString === "function") return value.toString();
+  return null;
+};
+
+const countApprovedUsers = (
+  approvals,
+  acceptedPassengerIds,
+  requesterIdStr
+) => {
+  const approvedUsers = new Set();
+  if (requesterIdStr && acceptedPassengerIds.has(requesterIdStr)) {
+    approvedUsers.add(requesterIdStr);
   }
-  if (ride?.driver) {
-    required.add(ride.driver.toString());
-  }
-  return Array.from(required);
+  approvals.forEach((approval) => {
+    if (approval.status !== "approved") return;
+    const userId = toIdString(approval.user);
+    if (!userId) return;
+    if (acceptedPassengerIds.has(userId)) {
+      approvedUsers.add(userId);
+    }
+  });
+  return approvedUsers.size;
+};
+
+const buildStopRequestPayload = (
+  request,
+  acceptedPassengerIds,
+  requesterIdStr,
+  requiredUsers
+) => {
+  const approvedUsers = countApprovedUsers(
+    request.approvals || [],
+    acceptedPassengerIds,
+    requesterIdStr
+  );
+  return {
+    ...request.toObject(),
+    approvalsSummary: {
+      required: requiredUsers,
+      approved: approvedUsers,
+    },
+  };
 };
 
 // GET /api/rides/:rideId/stop-requests
@@ -55,34 +96,23 @@ const getStopRequests = async (req, res) => {
       return res.status(403).json({ message: "Acesso negado" });
     }
 
-    const acceptedPassengerIds = await getAcceptedPassengerIds(rideId);
-    const driverId = ride.driver ? ride.driver.toString() : null;
+    const acceptedPassengerIds = await getAcceptedPassengerIdSet(rideId);
+    const driverIdStr = toIdString(ride.driver);
+    const requiredUsers = acceptedPassengerIds.size;
 
     const requests = await StopRequest.find({ ride: rideId })
       .populate("requester", "name email")
       .populate("approvals.user", "name email")
       .sort({ createdAt: -1 });
 
-    const payload = requests.map((request) => {
-      const requiredApproverIds = acceptedPassengerIds
-        .filter((id) => id !== request.requester.toString());
-      if (driverId) {
-        requiredApproverIds.push(driverId);
-      }
-      const approvedIds = request.approvals
-        .filter((approval) => approval.status === "approved")
-        .map((approval) => approval.user.toString());
-      const approvedCount = requiredApproverIds.filter((id) =>
-        approvedIds.includes(id)
-      ).length;
-      return {
-        ...request.toObject(),
-        approvalsSummary: {
-          required: requiredApproverIds.length,
-          approved: approvedCount,
-        },
-      };
-    });
+    const payload = requests.map((request) =>
+      buildStopRequestPayload(
+        request,
+        acceptedPassengerIds,
+        toIdString(request.requester),
+        requiredUsers
+      )
+    );
 
     return res.json(payload);
   } catch (err) {
@@ -116,8 +146,8 @@ const createStopRequest = async (req, res) => {
       return res.status(403).json({ message: "Acesso negado" });
     }
 
-    const acceptedPassengerIds = await getAcceptedPassengerIds(rideId);
-    const isAcceptedPassenger = acceptedPassengerIds.includes(
+    const acceptedPassengerList = await getAcceptedPassengerIds(rideId);
+    const isAcceptedPassenger = acceptedPassengerList.includes(
       req.user._id.toString()
     );
 
@@ -136,18 +166,22 @@ const createStopRequest = async (req, res) => {
       approvals,
     });
 
-    const requiredApproverIds = await getRequiredApproverIds(
-      rideId,
-      ride,
-      req.user._id
-    );
-    if (approvedAll(requiredApproverIds, approvals)) {
+    const acceptedPassengerIds = await getAcceptedPassengerIdSet(rideId);
+    const driverIdStr = toIdString(ride.driver);
+    const requiredUsers = acceptedPassengerIds.size;
+    if (approvedAll(requiredUsers, 0, false)) {
       request.status = "approved";
       await request.save();
     }
 
     const populated = await request.populate("requester", "name email");
-    return res.status(201).json(populated);
+    const payload = buildStopRequestPayload(
+      populated,
+      acceptedPassengerIds,
+      toIdString(populated.requester),
+      requiredUsers
+    );
+    return res.status(201).json(payload);
   } catch (err) {
     console.error("Erro a criar pedido de paragem:", err);
     return res
@@ -156,10 +190,9 @@ const createStopRequest = async (req, res) => {
   }
 };
 
-const approvedAll = (requiredApproverIds, approvals) => {
-  if (requiredApproverIds.length === 0) return true;
-  const approvedIds = approvals.map((approval) => approval.user.toString());
-  return requiredApproverIds.every((id) => approvedIds.includes(id));
+const approvedAll = (requiredUsers, approvedUsers, driverApproved) => {
+  if (!driverApproved) return false;
+  return approvedUsers >= requiredUsers;
 };
 
 const updateStopRequest = async (req, res) => {
@@ -177,14 +210,17 @@ const updateStopRequest = async (req, res) => {
     }
 
     const ride = request.ride;
-    const isDriver = ride.driver.toString() === req.user._id.toString();
-    const requiredApproverIds = await getRequiredApproverIds(
-      ride._id,
-      ride,
-      request.requester
-    );
-    const acceptedPassengerIds = await getAcceptedPassengerIds(ride._id);
-    const isAcceptedPassenger = acceptedPassengerIds.includes(
+    const driverIdStr = toIdString(ride?.driver);
+    const requesterIdStr = toIdString(request.requester);
+
+    if (!requesterIdStr) {
+      return res.status(400).json({ message: "Pedido invalido" });
+    }
+
+    const isDriver = driverIdStr === req.user._id.toString();
+    const acceptedPassengerIds = await getAcceptedPassengerIdSet(ride._id);
+    const requiredUsers = acceptedPassengerIds.size;
+    const isAcceptedPassenger = acceptedPassengerIds.has(
       req.user._id.toString()
     );
 
@@ -197,7 +233,7 @@ const updateStopRequest = async (req, res) => {
       }
 
       const existingIndex = request.approvals.findIndex(
-        (approval) => approval.user.toString() === req.user._id.toString()
+        (approval) => toIdString(approval.user) === req.user._id.toString()
       );
       if (existingIndex >= 0) {
         request.approvals[existingIndex].status = "approved";
@@ -209,18 +245,33 @@ const updateStopRequest = async (req, res) => {
         });
       }
 
-      const approvals = request.approvals.filter(
-        (approval) => approval.status === "approved"
+      const approvedUsers = countApprovedUsers(
+        request.approvals || [],
+        acceptedPassengerIds,
+        requesterIdStr
       );
-      if (approvedAll(requiredApproverIds, approvals)) {
+      const driverApproved = request.approvals.some(
+        (approval) =>
+          approval.status === "approved" &&
+          toIdString(approval.user) === driverIdStr
+      );
+      if (approvedAll(requiredUsers, approvedUsers, driverApproved)) {
         request.status = "approved";
       }
 
       await request.save();
-      const populated = await request
-        .populate("requester", "name email")
-        .populate("approvals.user", "name email");
-      return res.json(populated);
+      await request.populate([
+        { path: "requester", select: "name email" },
+        { path: "approvals.user", select: "name email" },
+      ]);
+      return res.json(
+        buildStopRequestPayload(
+          request,
+          acceptedPassengerIds,
+          requesterIdStr,
+          requiredUsers
+        )
+      );
     }
 
     if (action === "driver-reject") {
@@ -230,22 +281,37 @@ const updateStopRequest = async (req, res) => {
       if (request.status !== "voting") {
         return res.status(400).json({ message: "Estado invalido" });
       }
+      const existingIndex = request.approvals.findIndex(
+        (approval) => toIdString(approval.user) === req.user._id.toString()
+      );
+      if (existingIndex >= 0) {
+        request.approvals[existingIndex].status = "rejected";
+        request.approvals[existingIndex].decidedAt = new Date();
+      } else {
+        request.approvals.push({
+          user: req.user._id,
+          status: "rejected",
+        });
+      }
       request.status = "rejected";
       await request.save();
-      const populated = await request
-        .populate("requester", "name email")
-        .populate("approvals.user", "name email");
-      return res.json(populated);
+      await request.populate([
+        { path: "requester", select: "name email" },
+        { path: "approvals.user", select: "name email" },
+      ]);
+      return res.json(
+        buildStopRequestPayload(
+          request,
+          acceptedPassengerIds,
+          requesterIdStr,
+          requiredUsers
+        )
+      );
     }
 
     if (action === "passenger-approve" || action === "passenger-reject") {
       if (!isAcceptedPassenger) {
         return res.status(403).json({ message: "Acesso negado" });
-      }
-      if (request.requester.toString() === req.user._id.toString()) {
-        return res
-          .status(403)
-          .json({ message: "Nao podes votar no teu pedido" });
       }
       if (request.status !== "voting") {
         return res.status(400).json({ message: "Estado invalido" });
@@ -253,7 +319,7 @@ const updateStopRequest = async (req, res) => {
 
       const status = action === "passenger-approve" ? "approved" : "rejected";
       const existingIndex = request.approvals.findIndex(
-        (approval) => approval.user.toString() === req.user._id.toString()
+        (approval) => toIdString(approval.user) === req.user._id.toString()
       );
       if (existingIndex >= 0) {
         request.approvals[existingIndex].status = status;
@@ -268,19 +334,88 @@ const updateStopRequest = async (req, res) => {
       if (status === "rejected") {
         request.status = "rejected";
       } else {
-        const approvals = request.approvals.filter(
-          (approval) => approval.status === "approved"
+        const approvedUsers = countApprovedUsers(
+          request.approvals || [],
+          acceptedPassengerIds,
+          requesterIdStr
         );
-        if (approvedAll(requiredApproverIds, approvals)) {
+        const driverApproved = request.approvals.some(
+          (approval) =>
+            approval.status === "approved" &&
+            toIdString(approval.user) === driverIdStr
+        );
+        if (approvedAll(requiredUsers, approvedUsers, driverApproved)) {
           request.status = "approved";
         }
       }
 
       await request.save();
-      const populated = await request
-        .populate("requester", "name email")
-        .populate("approvals.user", "name email");
-      return res.json(populated);
+      await request.populate([
+        { path: "requester", select: "name email" },
+        { path: "approvals.user", select: "name email" },
+      ]);
+      return res.json(
+        buildStopRequestPayload(
+          request,
+          acceptedPassengerIds,
+          requesterIdStr,
+          requiredUsers
+        )
+      );
+    }
+
+    if (action === "passenger-reset" || action === "driver-reset") {
+      const isPassengerReset = action === "passenger-reset";
+      if (isPassengerReset && !isAcceptedPassenger) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      if (!isPassengerReset && !isDriver) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      const existingIndex = request.approvals.findIndex(
+        (approval) => toIdString(approval.user) === req.user._id.toString()
+      );
+      if (existingIndex < 0) {
+        return res.status(400).json({ message: "Sem voto para remover" });
+      }
+
+      request.approvals.splice(existingIndex, 1);
+
+      const hasRejection = request.approvals.some(
+        (approval) => approval.status === "rejected"
+      );
+      if (hasRejection) {
+        request.status = "rejected";
+      } else {
+      const approvedUsers = countApprovedUsers(
+        request.approvals || [],
+        acceptedPassengerIds,
+        requesterIdStr
+      );
+      const driverApproved = request.approvals.some(
+        (approval) =>
+          approval.status === "approved" &&
+          toIdString(approval.user) === driverIdStr
+      );
+      request.status = approvedAll(requiredUsers, approvedUsers, driverApproved)
+        ? "approved"
+        : "voting";
+    }
+
+      await request.save();
+      await request.populate([
+        { path: "requester", select: "name email" },
+        { path: "approvals.user", select: "name email" },
+      ]);
+      return res.json(
+        buildStopRequestPayload(
+          request,
+          acceptedPassengerIds,
+          requesterIdStr,
+          requiredUsers
+        )
+      );
     }
 
     return res.status(400).json({ message: "Acao invalida" });

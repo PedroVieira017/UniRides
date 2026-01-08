@@ -206,6 +206,7 @@ const updateBookingStatus = async (req, res) => {
 
     booking.status = status;
     await booking.save();
+    await booking.populate("passenger", "name email");
 
     return res.json(booking);
   } catch (err) {

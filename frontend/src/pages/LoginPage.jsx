@@ -33,7 +33,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="page">
+    <div className="page auth-page">
       <div className="card auth-card">
         <div className="auth-header">
           <div className="auth-logo-circle">
@@ -61,7 +61,7 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="ex: pedro@alunos.uminho.pt"
+              placeholder="ex: escola@ipvc.pt"
             />
           </div>
 

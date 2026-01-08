@@ -71,9 +71,10 @@ const MyBookingsPage = () => {
             <article key={b._id} className="ride-card">
               <div className="ride-card-main">
                 <div className="ride-line">
-                  <span className="ride-route">
-                    {formatLocation(ride.origin)} -> {formatLocation(ride.destination)}
-                  </span>
+                <span className="ride-route">
+                  {formatLocation(ride.origin)} {" -> "}{" "}
+                  {formatLocation(ride.destination)}
+                </span>
                   <span className={`status-pill ${b.status}`}>
                     {b.status === "pending" && "Pendente"}
                     {b.status === "accepted" && "Aceite"}

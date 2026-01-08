@@ -191,6 +191,8 @@ const RideDetailsPage = () => {
   const handleUpdateBooking = async (booking, newStatus) => {
     if (!token) return;
 
+    setBookingsError(null);
+
     try {
       const res = await api.patch(
         `/bookings/${booking._id}`,
@@ -205,27 +207,12 @@ const RideDetailsPage = () => {
       setBookings((prev) =>
         prev.map((b) => (b._id === updated._id ? updated : b))
       );
+      setBookingsError(null);
 
-      setRide((prev) => {
-        if (!prev) return prev;
-        const seatsDelta = booking.seats || 1;
-
-        let delta = 0;
-        if (booking.status !== "accepted" && newStatus === "accepted") {
-          delta = -seatsDelta;
-        }
-        if (
-          booking.status === "accepted" &&
-          (newStatus === "cancelled" || newStatus === "rejected")
-        ) {
-          delta = seatsDelta;
-        }
-
-        return {
-          ...prev,
-          seatsAvailable: prev.seatsAvailable + delta,
-        };
-      });
+      if (ride?._id) {
+        const refreshed = await api.get(`/rides/${ride._id}`);
+        setRide(refreshed.data);
+      }
     } catch (err) {
       console.error("Erro ao atualizar reserva:", err);
       setBookingsError(
@@ -334,7 +321,8 @@ const RideDetailsPage = () => {
         <div className="details-header">
           <div>
             <h2 className="ride-route">
-              {formatLocation(ride.origin)} -> {formatLocation(ride.destination)}
+              {formatLocation(ride.origin)} {" -> "}{" "}
+              {formatLocation(ride.destination)}
             </h2>
             <div className="details-sub">
               {available} de {total} lugares disponiveis
@@ -343,17 +331,6 @@ const RideDetailsPage = () => {
           <div className="details-price-block">
             <div className="details-label">Preco por pessoa</div>
             <div className="details-price">{pricePerSeat.toFixed(2)} EUR</div>
-            {token && (
-              <button
-                type="button"
-                className={`favorite-button ${
-                  isFavorited ? "active" : ""
-                }`}
-                onClick={handleToggleFavorite}
-              >
-                {isFavorited ? "Favorito" : "Marcar favorito"}
-              </button>
-            )}
           </div>
         </div>
 
@@ -439,7 +416,7 @@ const RideDetailsPage = () => {
                 <div key={b._id} className="booking-item">
                   <div className="booking-main">
                     <div className="booking-name">
-                      {b.passenger?.name || "Passageiro"}
+                      {b.passenger?.name || b.passenger?.email || "Passageiro"}
                     </div>
                     <div className="booking-email">
                       {b.passenger?.email || ""}
@@ -480,6 +457,14 @@ const RideDetailsPage = () => {
                         onClick={() => handleUpdateBooking(b, "cancelled")}
                       >
                         Cancelar
+                      </button>
+                    )}
+                    {isDriver && b.status === "cancelled" && (
+                      <button
+                        className="primary-button small"
+                        onClick={() => handleUpdateBooking(b, "accepted")}
+                      >
+                        Reverter
                       </button>
                     )}
                   </div>
@@ -585,12 +570,18 @@ const RideDetailsPage = () => {
             <div className="stop-list">
               {stopRequests.map((request) => {
                 const approvals = request.approvals || [];
-                const myApproval = approvals.find(
-                  (approval) => approval.user?._id === currentUserId
-                );
+                const myApproval = approvals.find((approval) => {
+                  const approvalUserId =
+                    approval.user?._id ||
+                    approval.user?.id ||
+                    approval.user;
+                  if (!approvalUserId || !currentUserId) return false;
+                  return approvalUserId.toString() === currentUserId.toString();
+                });
                 const isRequester =
                   request.requester?._id === currentUserId ||
                   request.requester?.id === currentUserId;
+                const canResetReject = myApproval?.status === "rejected";
                 const summary = request.approvalsSummary || {
                   required: approvals.length,
                   approved: approvals.filter(
@@ -669,6 +660,31 @@ const RideDetailsPage = () => {
                         </button>
                       </>
                     )}
+                    {!isDriver &&
+                      canResetReject &&
+                      request.status === "rejected" &&
+                      !isRequester && (
+                        <button
+                          className="secondary-button small"
+                          onClick={() =>
+                            handleStopAction(request._id, "passenger-reset")
+                          }
+                        >
+                          Cancelar recusa
+                        </button>
+                      )}
+                    {isDriver &&
+                      canResetReject &&
+                      request.status === "rejected" && (
+                        <button
+                          className="secondary-button small"
+                          onClick={() =>
+                            handleStopAction(request._id, "driver-reset")
+                          }
+                        >
+                          Cancelar recusa
+                        </button>
+                      )}
                   </div>
                 </div>
               );

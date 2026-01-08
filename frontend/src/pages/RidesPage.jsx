@@ -317,7 +317,7 @@ const RidesPage = () => {
     const destinationOk = Array.from(destinationMatches).some((district) =>
       favoriteDistricts.has(district)
     );
-    return originOk && destinationOk;
+    return originOk || destinationOk;
   });
   const showFavoriteMatches = !showResults && favoriteDistrictRides.length > 0;
   const ridesToShow = showFavoriteMatches ? favoriteDistrictRides : filteredRides;
@@ -390,14 +390,13 @@ const RidesPage = () => {
         </div>
       </section>
 
-      {showResults && (
-        <div className="filters-card">
-          <input
-            className="input"
-            placeholder="Pesquisar boleias"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="filters-card">
+        <input
+          className="input"
+          placeholder="Pesquisar boleias"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
           <div className="filters-row">
             <div className="field">
@@ -457,7 +456,6 @@ const RidesPage = () => {
           </div>
 
         </div>
-      )}
 
       {!showResults && !showFavoriteMatches && (
         <div className="empty-state">
@@ -530,7 +528,7 @@ const RidesPage = () => {
                     <div className="ride-card-main">
                       <div className="ride-line">
                         <span className="ride-route">
-                          {formatLocation(ride.origin)} ->{" "}
+                          {formatLocation(ride.origin)} {" -> "}{" "}
                           {formatLocation(ride.destination)}
                         </span>
                       </div>

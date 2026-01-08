@@ -119,6 +119,24 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
+}
+
+.header-toggle {
+  display: none;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 9999px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.header-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .header-links {
@@ -982,6 +1000,21 @@ button {
   padding: 2rem 1.5rem;
 }
 
+.auth-page {
+  background-color: #eef5f0;
+  background-image: radial-gradient(
+      circle at 18% 18%,
+      rgba(16, 185, 129, 0.12),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 82% 14%,
+      rgba(15, 118, 110, 0.18),
+      transparent 38%
+    ),
+    linear-gradient(180deg, #f2f7f3 0%, #e9f0ee 100%);
+}
+
 .page .card {
   width: 100%;
   max-width: 440px;
@@ -1131,6 +1164,16 @@ button {
 }
 
 @media (max-width: 900px) {
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .app-header-right {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .hero {
     padding: 1.6rem;
   }
@@ -1143,6 +1186,37 @@ button {
 @media (max-width: 768px) {
   .app-header {
     padding: 0.75rem 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-header-left,
+  .app-header-right {
+    width: 100%;
+  }
+
+  .header-toggle {
+    display: inline-flex;
+  }
+
+  .header-menu {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    display: none;
+  }
+
+  .header-menu.open {
+    display: flex;
+  }
+
+  .header-links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-chip {
+    width: 100%;
   }
 
   .toolbar {
@@ -1150,9 +1224,42 @@ button {
     align-items: flex-start;
   }
 
+  .hero {
+    padding: 1.25rem;
+  }
+
+  .hero-visual {
+    order: -1;
+  }
+
+  .hero-orbit {
+    width: 180px;
+    height: 180px;
+  }
+
+  .hero-map-card {
+    min-width: 180px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+  }
+
+  .rides-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
   .ride-card {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .ride-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
 
   .ride-card-side {
@@ -1162,7 +1269,59 @@ button {
     width: 100%;
   }
 
+  .details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .details-price-block {
+    text-align: left;
+  }
+
   .details-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reserve-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .booking-item,
+  .stop-item {
+    flex-direction: column;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-input-wrap {
+    flex-direction: column;
+  }
+
+  .chat-message {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-main {
+    padding: 0 1rem 2rem;
+  }
+
+  .hero-search {
+    flex-direction: column;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-link {
+    width: 100%;
   }
 }

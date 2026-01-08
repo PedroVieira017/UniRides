@@ -74,7 +74,8 @@ const MyRidesPage = () => {
               <div className="ride-card-main">
                 <div className="ride-line">
                   <span className="ride-route">
-                    {formatLocation(ride.origin)} -> {formatLocation(ride.destination)}
+                    {formatLocation(ride.origin)} {" -> "}{" "}
+                    {formatLocation(ride.destination)}
                   </span>
                   <span className="ride-tag">As minhas boleias</span>
                 </div>

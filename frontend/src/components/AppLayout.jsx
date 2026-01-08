@@ -1,5 +1,5 @@
 // src/components/AppLayout.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -7,9 +7,11 @@ const AppLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
+    setMenuOpen(false);
     navigate("/login");
   };
 
@@ -32,23 +34,44 @@ const AppLayout = ({ children }) => {
         <div className="app-header-right">
           {user && (
             <>
-              <div className="header-links">
-                <Link className="header-link" to="/my-rides">
-                  As minhas boleias
-                </Link>
-                <Link className="header-link" to="/my-bookings">
-                  As minhas reservas
-                </Link>
-                <Link className="header-link" to="/favorites">
-                  Favoritos
-                </Link>
-              </div>
-              <span className="user-chip">
-                {user.name} - {user.email}
-              </span>
-              <button className="secondary-button" onClick={handleLogout}>
-                Sair
+              <button
+                type="button"
+                className="header-toggle"
+                onClick={() => setMenuOpen((prev) => !prev)}
+              >
+                {menuOpen ? "Fechar" : "Menu"}
               </button>
+              <div className={`header-menu ${menuOpen ? "open" : ""}`}>
+                <div className="header-links">
+                  <Link
+                    className="header-link"
+                    to="/my-rides"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    As minhas boleias
+                  </Link>
+                  <Link
+                    className="header-link"
+                    to="/my-bookings"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    As minhas reservas
+                  </Link>
+                  <Link
+                    className="header-link"
+                    to="/favorites"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Favoritos
+                  </Link>
+                </div>
+                <span className="user-chip">
+                  {user.name} - {user.email}
+                </span>
+                <button className="secondary-button" onClick={handleLogout}>
+                  Sair
+                </button>
+              </div>
             </>
           )}
         </div>

@@ -16,6 +16,22 @@ const RegisterPage = () => {
     e.preventDefault();
     setError(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const allowedDomains = ["@ipvc.pt", "@estg.ipvc.pt"];
+    const isAllowed = allowedDomains.some((domain) =>
+      normalizedEmail.endsWith(domain)
+    );
+
+    if (!isAllowed) {
+      setError("Email deve terminar em @ipvc.pt ou @estg.ipvc.pt.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("A palavra-passe deve ter no minimo 6 caracteres.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("As palavras-passe nao coincidem.");
       return;
@@ -24,7 +40,11 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      await api.post("/auth/register", { name, email, password });
+      await api.post("/auth/register", {
+        name,
+        email: normalizedEmail,
+        password,
+      });
       navigate("/login");
     } catch (err) {
       console.error(err);
@@ -38,7 +58,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="page">
+    <div className="page auth-page">
       <div className="card auth-card">
         <div className="auth-header">
           <div className="auth-logo-circle">
@@ -79,7 +99,7 @@ const RegisterPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="ex: nome@alunos.uminho.pt"
+              placeholder="ex: escola@estg.ipvc.pt.pt"
             />
           </div>
 
