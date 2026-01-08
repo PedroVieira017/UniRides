@@ -1,35 +1,87 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// src/App.jsx
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import RidesPage from "./pages/RidesPage";
+import RideDetailsPage from "./pages/RideDetailsPage";
+import CreateRidePage from "./pages/CreateRidePage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import MyRidesPage from "./pages/MyRidesPage";
+import MyBookingsPage from "./pages/MyBookingsPage";
+import MyFavoritesPage from "./pages/MyFavoritesPage";
 
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Routes>
+      {/* Home: lista de boleias */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <RidesPage />
+          </ProtectedRoute>
+        }
+      />
 
-export default App
+      {/* Detalhe da boleia */}
+      <Route
+        path="/rides/:id"
+        element={
+          <ProtectedRoute>
+            <RideDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Criar nova boleia */}
+      <Route
+        path="/rides/new"
+        element={
+          <ProtectedRoute>
+            <CreateRidePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-rides"
+        element={
+          <ProtectedRoute>
+            <MyRidesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookingsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/favorites"
+        element={
+          <ProtectedRoute>
+            <MyFavoritesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Autenticação */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Qualquer outra rota redireciona para "/" */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+
+
+  );
+};
+
+export default App;
