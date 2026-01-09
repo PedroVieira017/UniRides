@@ -1,4 +1,4 @@
-const Ride = require("../models/Ride");
+const Ride = require("../models/ride");
 const User = require("../models/user");
 
 // Criar nova boleia
