@@ -1,9 +1,9 @@
 # UniRides - Plataforma de boleias
 
-Aplicacao web para partilha de boleias entre membros da comunidade academica,
-com autenticacao, gestao de boleias e comunicacao em tempo real.
+Aplicação web para partilha de boleias entre membros da comunidade académica,
+com autenticação, gestão de boleias e comunicação em tempo real.
 
-## Instalacao
+## Instalação
 Requisitos:
 - Node.js 18+
 - MongoDB local ou Atlas
@@ -50,34 +50,34 @@ npm run dev
 ```
 
 ## Membros do grupo
-- Pedro Rodrigues Vieira n31389
-- Diogo Viana n29195
-- Pablo Mendes n31404
+- Pedro Rodrigues Vieira, n31389
+- Diogo Viana, n29195
+- Pablo Mendes, n31404
 
 ## Uso de IA (apenas nestas partes)
 ### Rotas populares (frontend)
-Usamos IA apenas para apoiar a composicao do bloco "Rotas populares" (conteudo de exemplo e organizacao do layout). Depois, ajustamos manualmente os textos e a lista para ficar consistente com o resto da pagina.
+Usamos IA apenas para apoiar a composição do bloco "Rotas populares" (conteúdo de exemplo e organização do layout). Depois, ajustamos manualmente os textos e a lista para ficar consistente com o resto da pgina.
 
 Onde foi feito:
-- `frontend/src/pages/RidesPage.jsx` (secao do bloco "Rotas populares")
+- `frontend/src/pages/RidesPage.jsx` (secção do bloco "Rotas populares")
 - `frontend/src/App.css` (estilos do cartao)
 
 O que precisamos para fazer:
-- Apenas React/Vite ja instalado (sem dependencias extra)
+- Apenas React/Vite ja instalado (sem dependências extra)
 - Texto/rotas finais definidos manualmente
 
 ### Chat da boleia (tempo real)
-Usamos IA apenas para apoiar a estrutura base do fluxo em tempo real (eventos de envio/rececao e ligacao do socket) e a organizacao do UI do chat. O codigo final foi revisto e adaptado ao nosso backend e ao modelo de dados.
+Usamos IA apenas para apoiar a estrutura base do fluxo em tempo real (eventos de envio/receção e ligação do socket) e a organização do UI do chat. O código final foi revisto e adaptado ao nosso backend e ao modelo de dados.
 
 Onde foi feito:
 - `backend/src/index.js` (Socket.IO: conexao, join da sala da boleia, broadcast)
 - `backend/src/routes/messageRoutes.js` (rotas REST de mensagens)
 - `frontend/src/api/socket.js` (cliente Socket.IO)
-- `frontend/src/components/RideChat.jsx` (UI e logica)
-- `frontend/src/pages/RideDetailsPage.jsx` (injecao do chat na pagina da boleia)
+- `frontend/src/components/RideChat.jsx` (UI e lógica)
+- `frontend/src/pages/RideDetailsPage.jsx` (injeção do chat na página da boleia)
 - `frontend/src/index.css` (estilos com apoio do chat)
 
 O que precisamos para fazer:
-- Dependencias: `socket.io` no backend e `socket.io-client` no frontend
-- Backend e frontend a correr (ver secao Instalacao)
-- Variavel `VITE_API_URL` apontada ao backend
+- Dependências: `socket.io` no backend e `socket.io-client` no frontend
+- Backend e frontend a correr (ver secção Instalação)
+- Variável `VITE_API_URL` apontada ao backend
